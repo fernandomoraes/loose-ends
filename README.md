@@ -2,13 +2,9 @@
 
 A live checklist above the Claude Code prompt of what the conversation raised: topics, proposals, open questions, decisions and tasks. Nothing gets lost while the conversation moves on.
 
-```
-Todo · 3 open · 1 done
-  ○ 2. Decide where the band draws: above the prompt or a side pane
-  ○ 3. Expose the list to the main model as a tool?
-  ○ 4. Prune old sessions from the store
-  ✓ 1. Understand how Mindful-Claude hooks into the UI
-```
+![loose-ends demo](demo.gif)
+
+<sub>The demo is a recreation of the band, with the layout, colors and flow the plugin draws.</sub>
 
 ## How it works
 
