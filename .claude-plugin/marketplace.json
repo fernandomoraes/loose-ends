@@ -1,0 +1,15 @@
+{
+  "name": "loose-ends",
+  "owner": { "name": "Fernando Moraes" },
+  "metadata": { "description": "loose-ends: never lose what the conversation raised" },
+  "plugins": [
+    {
+      "name": "loose-ends",
+      "source": "./",
+      "description": "A live checklist above the Claude Code prompt of what the conversation raised",
+      "homepage": "https://github.com/fernandomoraes/loose-ends",
+      "repository": "https://github.com/fernandomoraes/loose-ends",
+      "license": "MIT"
+    }
+  ]
+}
