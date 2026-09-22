@@ -1,6 +1,6 @@
 {
   "name": "loose-ends",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A live checklist above the prompt of the conversation's loose ends: questions left unanswered, points made in passing, caveats and deferred work it moved past, kept up to date by a small model after each turn. Needs function hooks (early access) and an interactive terminal.",
   "author": { "name": "Fernando Moraes" },
   "homepage": "https://github.com/fernandomoraes/loose-ends",
