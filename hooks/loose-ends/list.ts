@@ -8,11 +8,11 @@ export type Item = {
   pinned: boolean
 }
 
-export type TodoState = { items: Item[]; nextId: number; cursor: number }
+export type LooseEndsState = { items: Item[]; nextId: number; cursor: number }
 
 export type Ops = { add: string[]; done: number[] }
 
-export const EMPTY: TodoState = { items: [], nextId: 1, cursor: 0 }
+export const EMPTY: LooseEndsState = { items: [], nextId: 1, cursor: 0 }
 
 const MAX_TEXT = 120
 
@@ -32,7 +32,7 @@ function readItem(raw: unknown): Item[] {
   return [{ id: r.id, text: r.text, status: r.status, pinned: r.pinned === true }]
 }
 
-export function readState(saved: unknown): TodoState {
+export function readState(saved: unknown): LooseEndsState {
   const s = (typeof saved === 'object' && saved !== null ? saved : {}) as Record<string, unknown>
   const items = Array.isArray(s.items) ? s.items.flatMap(readItem) : []
   const maxId = items.reduce((max, item) => Math.max(max, item.id), 0)
@@ -41,7 +41,7 @@ export function readState(saved: unknown): TodoState {
   return { items, nextId, cursor }
 }
 
-export function applyOps(state: TodoState, ops: Ops): TodoState {
+export function applyOps(state: LooseEndsState, ops: Ops): LooseEndsState {
   const items = state.items.map(item =>
     item.status === 'open' && !item.pinned && ops.done.includes(item.id) ? { ...item, status: 'done' as const } : item)
   const seen = new Set(items.map(item => normalize(item.text)))
@@ -56,14 +56,14 @@ export function applyOps(state: TodoState, ops: Ops): TodoState {
   return { ...state, items, nextId }
 }
 
-export function addItem(state: TodoState, raw: string): { state: TodoState; item: Item | undefined } {
+export function addItem(state: LooseEndsState, raw: string): { state: LooseEndsState; item: Item | undefined } {
   const text = cleanText(raw)
   if (!text) return { state, item: undefined }
   const item: Item = { id: state.nextId, text, status: 'open', pinned: false }
   return { state: { ...state, items: [...state.items, item], nextId: state.nextId + 1 }, item }
 }
 
-export function setStatus(state: TodoState, ids: readonly number[], status: Status): { state: TodoState; changed: Item[]; missing: number[] } {
+export function setStatus(state: LooseEndsState, ids: readonly number[], status: Status): { state: LooseEndsState; changed: Item[]; missing: number[] } {
   const known = new Set(state.items.map(item => item.id))
   const missing = ids.filter(id => !known.has(id))
   const changed: Item[] = []
@@ -76,7 +76,7 @@ export function setStatus(state: TodoState, ids: readonly number[], status: Stat
   return { state: changed.length > 0 ? { ...state, items } : state, changed, missing }
 }
 
-export function toggle(state: TodoState, id: number): TodoState {
+export function toggle(state: LooseEndsState, id: number): LooseEndsState {
   const item = state.items.find(candidate => candidate.id === id)
   if (!item || item.status === 'dropped') return state
   return setStatus(state, [id], item.status === 'open' ? 'done' : 'open').state

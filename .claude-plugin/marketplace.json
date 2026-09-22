@@ -1,12 +1,12 @@
 {
   "name": "loose-ends",
   "owner": { "name": "Fernando Moraes" },
-  "metadata": { "description": "loose-ends: never lose what the conversation raised" },
+  "metadata": { "description": "loose-ends: catch what the conversation left behind" },
   "plugins": [
     {
       "name": "loose-ends",
       "source": "./",
-      "description": "A live checklist above the Claude Code prompt of what the conversation raised",
+      "description": "A live checklist above the Claude Code prompt of what the conversation left behind",
       "homepage": "https://github.com/fernandomoraes/loose-ends",
       "repository": "https://github.com/fernandomoraes/loose-ends",
       "license": "MIT"

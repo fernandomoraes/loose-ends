@@ -1,15 +1,15 @@
 /* @jsx h */
 import type { CommandRunInput, CommandRunResult, EngineInterface, Register } from 'claude-code'
-import { DEFAULTS, applyCommand, openText, readConfig, type Config } from './todo/command.ts'
-import { SYSTEM, buildPrompt, parseOps, pending } from './todo/extract.ts'
-import { EMPTY, applyOps, bandItems, counts, mark, readState, toggle, type TodoState } from './todo/list.ts'
+import { DEFAULTS, applyCommand, openText, readConfig, type Config } from './loose-ends/command.ts'
+import { SYSTEM, buildPrompt, parseOps, pending } from './loose-ends/extract.ts'
+import { EMPTY, applyOps, bandItems, counts, mark, readState, toggle, type LooseEndsState } from './loose-ends/list.ts'
 
 const MODEL = 'haiku'
 const MAX_SESSIONS = 30
 const COLOR = '#5fb3b3'
 
 let config: Config = DEFAULTS
-let state: TodoState = EMPTY
+let state: LooseEndsState = EMPTY
 let sessionId: string | undefined
 let isInteractive = false
 let isUpdating = false
@@ -50,9 +50,9 @@ async function update($: EngineInterface): Promise<void> {
   $.ui.invalidate('ui.render')
   try {
     await syncSession($)
-    const { batch, cursor } = pending(await $.session.messages(), state.cursor)
+    const { batch, latest, cursor } = pending(await $.session.messages(), state.cursor)
     if (batch.length > 0) {
-      const reply = await $.model.complete({ model: MODEL, system: SYSTEM, prompt: buildPrompt(state.items, batch) })
+      const reply = await $.model.complete({ model: MODEL, system: SYSTEM, prompt: buildPrompt(state.items, batch, latest) })
       const ops = parseOps(reply)
       if (!ops) throw new Error(`unreadable reply: ${reply.slice(0, 200)}`)
       state = applyOps(state, ops)
@@ -79,7 +79,7 @@ async function confirmExit($: EngineInterface, e: CommandRunInput, next: Next): 
   const { open } = counts(state.items)
   if (!config.enabled || !config.confirmExit || open === 0) return next(e)
   const answer = await $.ui
-    .ask(`${open} open todo item${open === 1 ? '' : 's'}. Leave the session?`, { options: ['Leave', 'Stay'], header: 'Todo' })
+    .ask(`${open} open loose end${open === 1 ? '' : 's'}. Leave the session?`, { options: ['Leave', 'Stay'], header: 'Loose ends' })
     .catch(() => 'Stay')
   return answer === 'Leave' ? next(e) : { text: openText(state.items) }
 }
@@ -91,11 +91,11 @@ export const register: Register = on => {
     config = readConfig(await $.store.get('config').catch(log($, 'store read failed')))
     await syncSession($).catch(log($, 'session not read'))
     await $.command.register({
-      name: 'todo',
-      description: 'The checklist of what this conversation raised: add, done, undo, rm, clear, scan, on, off (loose-ends)',
+      name: 'loose-ends',
+      description: 'What this conversation left behind: add, done, undo, rm, clear, scan, on, off (loose-ends)',
       argumentHint: '[add <text> | done <n> | undo <n> | rm <n> | clear | scan | on | off | rows <n> | exit on|off | help]',
       immediate: true,
-    }).catch(log($, '/todo not registered'))
+    }).catch(log($, '/loose-ends not registered'))
     return r
   })
 
@@ -111,7 +111,7 @@ export const register: Register = on => {
     return r
   })
 
-  on('command.run', { command: 'todo' }, async ($, e) => {
+  on('command.run', { command: 'loose-ends' }, async ($, e) => {
     await syncSession($).catch(log($, 'session not read', 'debug'))
     const applied = applyCommand(state, config, e.args)
     if (applied.config !== config) {
@@ -137,7 +137,7 @@ export const register: Register = on => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const room = Math.max(1, Math.min(config.rows, e.props.maxRows) - 1)
     const { shown, hidden } = bandItems(state.items, room)
-    const header = `Todo · ${open} open${done > 0 ? ` · ${done} done` : ''}${isUpdating ? ' · updating…' : ''}`
+    const header = `Loose ends · ${open} open${done > 0 ? ` · ${done} done` : ''}${isUpdating ? ' · updating…' : ''}`
     const hint = e.viewport?.isFullscreen ? 'click ○ to check off' : 'ctrl+x tab, then enter to check off'
     return (
       <Box flexDirection="column">
@@ -155,7 +155,7 @@ export const register: Register = on => {
               </Text>
             </Box>
           ))}
-          {hidden > 0 ? <Text dimColor>{`  +${hidden} more · /todo`}</Text> : null}
+          {hidden > 0 ? <Text dimColor>{`  +${hidden} more · /loose-ends`}</Text> : null}
         </Box>
         {await next(e)}
       </Box>

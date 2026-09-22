@@ -1,4 +1,4 @@
-import { EMPTY, addItem, counts, mark, setStatus, type Item, type Status, type TodoState } from './list.ts'
+import { EMPTY, addItem, counts, mark, setStatus, type Item, type Status, type LooseEndsState } from './list.ts'
 
 export type Config = {
   enabled: boolean
@@ -23,16 +23,16 @@ export function readConfig(saved: unknown): Config {
 }
 
 export const HELP = [
-  '/todo                  the whole list',
-  '/todo add <text>       add an item by hand',
-  '/todo done <n...>      mark items done',
-  '/todo undo <n...>      reopen items',
-  '/todo rm <n...>        drop items (the model will not add them again)',
-  '/todo clear            empty the list',
-  '/todo scan             read the whole conversation again',
-  '/todo on | off         show or hide the band above the prompt',
-  `/todo rows <n>         rows the band may take (${MIN_ROWS} to ${MAX_ROWS})`,
-  '/todo exit on | off    ask before /exit while items are open',
+  '/loose-ends                   the whole list',
+  '/loose-ends add <text>        add an item by hand',
+  '/loose-ends done <n...>       mark items done',
+  '/loose-ends undo <n...>       reopen items',
+  '/loose-ends rm <n...>         drop items (the model will not add them again)',
+  '/loose-ends clear             empty the list',
+  '/loose-ends scan              read the whole conversation again',
+  '/loose-ends on | off          show or hide the band above the prompt',
+  `/loose-ends rows <n>          rows the band may take (${MIN_ROWS} to ${MAX_ROWS})`,
+  '/loose-ends exit on | off     ask before /exit while items are open',
 ].join('\n')
 
 const OPEN_SHOWN = 5
@@ -43,9 +43,9 @@ export function openText(items: readonly Item[]): string {
   const shown = open.slice(0, OPEN_SHOWN)
   const rest = open.length - shown.length
   return [
-    `todo: staying here, ${open.length} open`,
+    `loose-ends: staying here, ${open.length} open`,
     ...shown.map(line),
-    ...(rest > 0 ? [`… +${rest} more · /todo`] : []),
+    ...(rest > 0 ? [`… +${rest} more · /loose-ends`] : []),
   ].join('\n')
 }
 
@@ -54,7 +54,7 @@ const line = (item: Item) => `${mark(item)} ${item.id}. ${item.text}`
 export function listText(items: readonly Item[], config: Config): string {
   const visible = items.filter(item => item.status !== 'dropped')
   const { open, done } = counts(items)
-  const head = `todo: ${open} open · ${done} done${config.enabled ? '' : ' (band off: /todo on)'}`
+  const head = `loose-ends: ${open} open · ${done} done${config.enabled ? '' : ' (band off: /loose-ends on)'}`
   if (visible.length === 0) return `${head}\nnothing yet: items show up as the conversation raises them`
   const ordered = [...visible.filter(item => item.status === 'open'), ...visible.filter(item => item.status === 'done')]
   return [head, ...ordered.map(line)].join('\n')
@@ -66,10 +66,10 @@ function parseIds(words: readonly string[]): number[] {
 
 const STATUS_OF: Record<string, Status> = { done: 'done', undo: 'open', rm: 'dropped' }
 
-export type Applied = { state: TodoState; config: Config; text: string; scan?: true }
+export type Applied = { state: LooseEndsState; config: Config; text: string; scan?: true }
 
-/** Applies one `/todo` invocation; returns the new state and config and the transcript line. */
-export function applyCommand(state: TodoState, config: Config, args: string): Applied {
+/** Applies one `/loose-ends` invocation; returns the new state and config and the transcript line. */
+export function applyCommand(state: LooseEndsState, config: Config, args: string): Applied {
   const trimmed = args.trim()
   const [head = '', ...rest] = trimmed.split(/\s+/)
   const verb = head.toLowerCase()
@@ -78,35 +78,35 @@ export function applyCommand(state: TodoState, config: Config, args: string): Ap
   if (!verb || verb === 'list') return same(listText(state.items, config))
   if (verb === 'help') return same(HELP)
   if (verb === 'on' || verb === 'off') {
-    return { state, config: { ...config, enabled: verb === 'on' }, text: `todo: band ${verb}` }
+    return { state, config: { ...config, enabled: verb === 'on' }, text: `loose-ends: band ${verb}` }
   }
   if (verb === 'add') {
     const added = addItem(state, trimmed.slice(head.length))
-    if (!added.item) return same('todo: add takes the item\'s text, e.g. /todo add review the schema')
-    return { state: added.state, config, text: `todo: added ${line(added.item)}` }
+    if (!added.item) return same('loose-ends: add takes the item\'s text, e.g. /loose-ends add review the schema')
+    return { state: added.state, config, text: `loose-ends: added ${line(added.item)}` }
   }
   const status = STATUS_OF[verb]
   if (status) {
     const ids = parseIds(rest)
-    if (ids.length === 0) return same(`todo: ${verb} takes item numbers, e.g. /todo ${verb} 2 5`)
+    if (ids.length === 0) return same(`loose-ends: ${verb} takes item numbers, e.g. /loose-ends ${verb} 2 5`)
     const result = setStatus(state, ids, status)
     const report = [
       ...result.changed.map(line),
       ...(result.missing.length > 0 ? [`no item ${result.missing.join(', ')}`] : []),
     ]
-    return { state: result.state, config, text: `todo: ${report.join('\n')}` }
+    return { state: result.state, config, text: `loose-ends: ${report.join('\n')}` }
   }
-  if (verb === 'clear') return { state: { ...EMPTY, cursor: state.cursor }, config, text: 'todo: cleared' }
-  if (verb === 'scan') return { state: { ...state, cursor: 0 }, config, text: 'todo: reading the conversation again…', scan: true }
+  if (verb === 'clear') return { state: { ...EMPTY, cursor: state.cursor }, config, text: 'loose-ends: cleared' }
+  if (verb === 'scan') return { state: { ...state, cursor: 0 }, config, text: 'loose-ends: reading the conversation again…', scan: true }
   if (verb === 'exit') {
     const arg = (rest[0] ?? '').toLowerCase()
-    if (arg !== 'on' && arg !== 'off') return same('todo: exit on or off')
-    return { state, config: { ...config, confirmExit: arg === 'on' }, text: `todo: /exit asks first: ${arg}` }
+    if (arg !== 'on' && arg !== 'off') return same('loose-ends: exit on or off')
+    return { state, config: { ...config, confirmExit: arg === 'on' }, text: `loose-ends: /exit asks first: ${arg}` }
   }
   if (verb === 'rows') {
     const rows = Number(rest[0])
-    if (!Number.isInteger(rows) || rows < MIN_ROWS || rows > MAX_ROWS) return same(`todo: rows takes a whole number from ${MIN_ROWS} to ${MAX_ROWS}`)
-    return { state, config: { ...config, rows }, text: `todo: the band takes up to ${rows} rows` }
+    if (!Number.isInteger(rows) || rows < MIN_ROWS || rows > MAX_ROWS) return same(`loose-ends: rows takes a whole number from ${MIN_ROWS} to ${MAX_ROWS}`)
+    return { state, config: { ...config, rows }, text: `loose-ends: the band takes up to ${rows} rows` }
   }
-  return same(`todo: no command "${head}"\n${HELP}`)
+  return same(`loose-ends: no command "${head}"\n${HELP}`)
 }

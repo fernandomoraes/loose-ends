@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { EMPTY, applyOps, bandItems, cleanText, readState, setStatus, toggle, type TodoState } from '../hooks/todo/list.ts'
+import { EMPTY, applyOps, bandItems, cleanText, readState, setStatus, toggle, type LooseEndsState } from '../hooks/loose-ends/list.ts'
 
-const withItems = (...texts: string[]): TodoState => applyOps(EMPTY, { add: texts, done: [] })
+const withItems = (...texts: string[]): LooseEndsState => applyOps(EMPTY, { add: texts, done: [] })
 
 describe('applyOps', () => {
   test('adds items with sequential ids', () => {

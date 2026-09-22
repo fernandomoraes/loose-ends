@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test'
-import { DEFAULTS, applyCommand, openText, readConfig } from '../hooks/todo/command.ts'
-import { EMPTY, applyOps } from '../hooks/todo/list.ts'
+import { DEFAULTS, applyCommand, openText, readConfig } from '../hooks/loose-ends/command.ts'
+import { EMPTY, applyOps } from '../hooks/loose-ends/list.ts'
 
 const state = { ...applyOps(EMPTY, { add: ['First', 'Second'], done: [] }), cursor: 6 }
 
@@ -45,7 +45,7 @@ describe('applyCommand', () => {
 test('openText lists the open items and counts the rest', () => {
   const many = applyOps(EMPTY, { add: ['a', 'b', 'c', 'd', 'e', 'f', 'g'], done: [] })
   const text = openText(applyCommand(many, DEFAULTS, 'done 1').state.items)
-  expect(text.split('\n')[0]).toBe('todo: staying here, 6 open')
+  expect(text.split('\n')[0]).toBe('loose-ends: staying here, 6 open')
   expect(text).toContain('○ 2. b')
   expect(text).toContain('+1 more')
 })
